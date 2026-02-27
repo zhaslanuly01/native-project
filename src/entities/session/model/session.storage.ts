@@ -1,8 +1,8 @@
 import * as SecureStore from "expo-secure-store";
 
 const KEYS = {
-  AUTH: "session:isAuthenticated",
-  BIOMETRICS_ENABLED: "session:biometricsEnabled",
+  AUTH: "session_isAuthenticated",
+  BIOMETRICS_ENABLED: "session_biometricsEnabled",
 };
 
 export const sessionStorage = {

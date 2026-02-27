@@ -16,12 +16,12 @@ export function RootTabs() {
       <Tab.Screen
         name="NewsList"
         component={NewsListPage}
-        options={{ title: "News" }}
+        options={{ title: "Новости" }}
       />
       <Tab.Screen
         name="Favorites"
         component={FavoritesPage}
-        options={{ title: "Favorites" }}
+        options={{ title: "Избранные" }}
       />
     </Tab.Navigator>
   );

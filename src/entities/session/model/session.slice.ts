@@ -39,3 +39,7 @@ export const {
 } = sessionSlice.actions;
 
 export const sessionReducer = sessionSlice.reducer;
+
+export type SessionSchema = {
+  session: SessionState;
+};
