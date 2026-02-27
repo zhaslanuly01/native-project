@@ -1,51 +1,34 @@
-# Welcome to your Expo app 👋
+### Зависимости
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# навигация
 
-## Get started
+npm i @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs
+npx expo install react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated
 
-1. Install dependencies
+# состояние + api
 
-   ```bash
-   npm install
-   ```
+npm i @reduxjs/toolkit react-redux
 
-2. Start the app
+# локальное хранение избранного / auth flags
 
-   ```bash
-   npx expo start
-   ```
+npx expo install @react-native-async-storage/async-storage
 
-In the output, you'll find options to open the app in a
+# webview (обязательный пункт)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+npx expo install react-native-webview
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+# биометрия (обязательный пункт)
 
-## Get a fresh project
+npx expo install expo-local-authentication
 
-When you're ready, run:
+# push (обязательный пункт)
 
-```bash
-npm run reset-project
-```
+npx expo install expo-notifications expo-device
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+# выбор/отправка файлов
 
-## Learn more
+npx expo install expo-document-picker expo-image-picker expo-file-system
 
-To learn more about developing your project with Expo, look at the following resources:
+# env (для API key)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# native-project
+npm i react-native-dotenv
