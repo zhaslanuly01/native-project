@@ -1,5 +1,6 @@
 import { Article } from "@/src/entities/article";
 import { File, Paths } from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import { useState } from "react";
 
 export function useExportArticleJson() {
@@ -16,7 +17,21 @@ export function useExportArticleJson() {
         .slice(0, 40);
 
       const file = new File(Paths.document, `${safeTitle}.json`);
+
+      if (!file.exists) {
+        file.create();
+      }
+
       file.write(JSON.stringify(article, null, 2));
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: "application/json",
+          dialogTitle: "Сохранить JSON статьи",
+          UTI: "public.json",
+        });
+      }
 
       return file.uri;
     } catch (e: any) {

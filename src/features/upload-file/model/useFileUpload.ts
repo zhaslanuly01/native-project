@@ -1,7 +1,15 @@
+import {
+  addFavorite,
+  saveFavoritesToStorage,
+  selectFavorites,
+} from "@/src/entities/favorite";
 import { FileTransferError, LocalFile } from "@/src/entities/file";
 import { useRef, useState } from "react";
+import { Alert } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import { pickFile } from "../lib/pickFile";
-import { fakeUploadFile } from "../lib/uploadFile";
+import { readTextFile } from "../lib/readJsonFile";
+import { parseImportedFavoriteArticle } from "../lib/validateArticleJson";
 
 function mapError(error: any): FileTransferError {
   const code = error?.code;
@@ -15,6 +23,21 @@ function mapError(error: any): FileTransferError {
   if (code === "NETWORK") {
     return { code, message: "Сетевая ошибка. Попробуйте ещё раз." };
   }
+  if (code === "INVALID_FILE_TYPE") {
+    return { code, message: "Разрешены только JSON файлы (.json)." };
+  }
+  if (code === "INVALID_JSON") {
+    return { code, message: "Файл не является корректным JSON." };
+  }
+  if (code === "INVALID_STRUCTURE") {
+    return {
+      code,
+      message: "JSON не соответствует структуре FavoriteArticle.",
+    };
+  }
+  if (code === "READ_FILE_ERROR") {
+    return { code, message: "Не удалось прочитать файл." };
+  }
 
   return {
     code: "UNKNOWN",
@@ -23,6 +46,9 @@ function mapError(error: any): FileTransferError {
 }
 
 export function useFileUpload() {
+  const dispatch = useDispatch();
+  const favorites = useSelector(selectFavorites);
+
   const [selectedFile, setSelectedFile] = useState<LocalFile | null>(null);
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -32,13 +58,19 @@ export function useFileUpload() {
   const abortRef = useRef<AbortController | null>(null);
 
   const handlePickFile = async () => {
-    setError(null);
-    setIsSuccess(false);
+    try {
+      setError(null);
+      setIsSuccess(false);
 
-    const file = await pickFile();
-    if (!file) return;
+      const file = await pickFile();
+      if (!file) return;
 
-    setSelectedFile(file);
+      setSelectedFile(file);
+    } catch (e) {
+      const mapped = mapError(e);
+      setError(mapped);
+      Alert.alert("Ошибка", mapped.message);
+    }
   };
 
   const handleUpload = async () => {
@@ -53,13 +85,72 @@ export function useFileUpload() {
     abortRef.current = controller;
 
     try {
-      await fakeUploadFile(selectedFile, {
-        onProgress: setProgress,
-        signal: controller.signal,
-      });
+      // size limit (same as before)
+      const maxSize = 10 * 1024 * 1024;
+      if (selectedFile.size > maxSize) {
+        const err = new Error("Размер файла превышает 10MB");
+        (err as any).code = "FILE_TOO_LARGE";
+        throw err;
+      }
+
+      // type check: mime OR extension
+      const isJsonMime = selectedFile.mimeType?.includes("json");
+      const isJsonExt = selectedFile.name.toLowerCase().endsWith(".json");
+      if (!isJsonMime && !isJsonExt) {
+        const err = new Error("Только JSON");
+        (err as any).code = "INVALID_FILE_TYPE";
+        throw err;
+      }
+
+      // fake progress (optional UX)
+      setProgress(10);
+
+      if (controller.signal.aborted) {
+        const err = new Error("Загрузка отменена");
+        (err as any).code = "USER_CANCELLED";
+        throw err;
+      }
+
+      const raw = await readTextFile(selectedFile);
+      setProgress(50);
+
+      if (controller.signal.aborted) {
+        const err = new Error("Загрузка отменена");
+        (err as any).code = "USER_CANCELLED";
+        throw err;
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        const err = new Error("Некорректный JSON");
+        (err as any).code = "INVALID_JSON";
+        throw err;
+      }
+
+      const article = parseImportedFavoriteArticle(parsed);
+
+      if (!article) {
+        const err = new Error("Неверная структура JSON");
+        (err as any).code = "INVALID_STRUCTURE";
+        throw err;
+      }
+
+      dispatch(addFavorite(article));
+
+      const exists = favorites.some((item) => item.id === article.id);
+      const nextItems = exists ? favorites : [article, ...favorites];
+      await saveFavoritesToStorage(nextItems);
+
+      setProgress(100);
       setIsSuccess(true);
+
+      Alert.alert("Успешно", "Статья импортирована в избранное");
     } catch (e) {
-      setError(mapError(e));
+      const mapped = mapError(e);
+      setError(mapped);
+      Alert.alert("Ошибка импорта", mapped.message);
     } finally {
       setIsUploading(false);
       abortRef.current = null;

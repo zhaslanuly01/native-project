@@ -193,12 +193,16 @@ export default function NewsDetailsPage() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerActions}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.headerActions}
+        >
           <Pressable
-            style={styles.actionButtonPrimary}
+            style={styles.openWebButton}
             onPress={handleToggleFavorite}
           >
-            <Text style={styles.actionButtonPrimaryText}>
+            <Text style={styles.openWebButtonText}>
               {isFavorite ? "★ Удалить из избранного" : "☆ В избранное"}
             </Text>
           </Pressable>
@@ -228,7 +232,7 @@ export default function NewsDetailsPage() {
           {!!exportJsonError && (
             <Text style={styles.errorText}>{exportJsonError}</Text>
           )}
-        </View>
+        </ScrollView>
 
         {!!article.urlToImage && (
           <Image

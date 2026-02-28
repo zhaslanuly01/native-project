@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { removeFavorite, selectFavorites } from "@/src/entities/favorite";
 import { useLogout } from "@/src/features/logout";
+import { FileUploadCard } from "@/src/features/upload-file";
 import { RootStackParamList } from "@/src/shared/types/router.types";
 import { Page } from "@/src/shared/ui/Page";
 
@@ -25,7 +26,7 @@ export default function FavoritesPage() {
           hitSlop={8}
           style={{ paddingHorizontal: 8 }}
         >
-          <Text style={{ color: "#dc2626", fontWeight: "700" }}>Logout</Text>
+          <Text style={{ color: "#dc2626", fontWeight: "700" }}>Выйти</Text>
         </Pressable>
       ),
     });
@@ -35,6 +36,16 @@ export default function FavoritesPage() {
 
   return (
     <Page>
+      <View
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: 12,
+          padding: 12,
+          gap: 8,
+        }}
+      >
+        <FileUploadCard />
+      </View>
       <FlatList
         data={favorites}
         keyExtractor={keyExtractor}

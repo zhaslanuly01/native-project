@@ -26,5 +26,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         savePhotosPermission: "Разрешите сохранять изображения в галерею.",
       },
     ],
+    [
+      "expo-file-system",
+      {
+        supportsOpeningDocumentsInPlace: true,
+        enableFileSharing: true,
+      },
+    ],
   ],
 });

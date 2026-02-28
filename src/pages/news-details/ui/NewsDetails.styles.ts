@@ -14,14 +14,14 @@ export const styles = StyleSheet.create({
     backgroundColor: "#f7f7f7",
     gap: 12,
   },
-
   headerActions: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
     gap: 8,
     marginBottom: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 2,
   },
-
   actionButtonSecondary: {
     paddingVertical: 10,
     paddingHorizontal: 12,
