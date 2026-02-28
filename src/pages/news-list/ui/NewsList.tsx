@@ -23,7 +23,8 @@ import {
 import { Article, NewsCard } from "@/src/entities/article";
 import { useGetTopHeadlinesQuery } from "@/src/entities/article/api/articleApi";
 import { Category, DateFilter, NewsFilters } from "@/src/features/news-filters";
-import { useDebounce } from "@/src/shared/lib";
+import { useDebounce } from "@/src/shared/lib/hooks";
+import { sendLocalNewsNotification } from "@/src/shared/lib/notifications";
 import { RootStackParamList, RootTabParamList } from "@/src/shared/types";
 import { ErrorView, Loader, Page } from "@/src/shared/ui";
 import { styles } from "./NewsList.styles";
@@ -52,6 +53,8 @@ export default function NewsListPage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
 
   const onEndReachedCalledDuringMoment = useRef(false);
+  const seenUrlsRef = useRef<Set<string>>(new Set());
+  const isFirstLoadRef = useRef(true);
 
   const queryArgs = useMemo(
     () => ({
@@ -178,6 +181,30 @@ export default function NewsListPage() {
     setIsLoadingMore(false);
     onEndReachedCalledDuringMoment.current = false;
   }, [debouncedQuery, category]);
+
+  useEffect(() => {
+    if (!data?.articles?.length) return;
+
+    const incoming = data.articles;
+    const newArticles = incoming.filter((a) => !seenUrlsRef.current.has(a.url));
+
+    incoming.forEach((a) => seenUrlsRef.current.add(a.url));
+
+    if (isFirstLoadRef.current) {
+      isFirstLoadRef.current = false;
+      return;
+    }
+
+    if (newArticles.length > 0) {
+      sendLocalNewsNotification({
+        title: "Новые новости",
+        body:
+          newArticles.length === 1
+            ? `1 новая статья: ${newArticles[0].title}`
+            : `${newArticles.length} новых статей доступны`,
+      });
+    }
+  }, [data]);
 
   if (isLoading && page === 1) return <Loader />;
 

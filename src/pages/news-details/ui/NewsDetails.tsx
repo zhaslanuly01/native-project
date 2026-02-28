@@ -1,4 +1,5 @@
 import { selectIsFavoriteByUrl, toggleFavorite } from "@/src/entities/favorite";
+import { sendFavoriteAddedNotification } from "@/src/shared/lib/notifications";
 import { RootStackParamList } from "@/src/shared/types/router.types";
 import { Page } from "@/src/shared/ui/Page";
 import { RouteProp, useRoute } from "@react-navigation/native";
@@ -42,6 +43,20 @@ export default function NewsDetailsPage() {
     publishedAt: article.publishedAt ?? "",
     urlToImage: article.urlToImage ?? null,
     sourceName: article.source?.name ?? "Не указан",
+  };
+
+  const handleToggleFavorite = async () => {
+    const wasFavorite = isFavorite;
+
+    dispatch(toggleFavorite(favoritePayload));
+
+    if (!wasFavorite) {
+      try {
+        await sendFavoriteAddedNotification(article.title || "Статья");
+      } catch (e) {
+        console.log("Notification error:", e);
+      }
+    }
   };
 
   if (!article?.url) {
@@ -136,7 +151,7 @@ export default function NewsDetailsPage() {
         <View style={styles.headerActions}>
           <Pressable
             style={styles.actionButtonPrimary}
-            onPress={() => dispatch(toggleFavorite(favoritePayload))}
+            onPress={handleToggleFavorite}
           >
             <Text style={styles.actionButtonPrimaryText}>
               {isFavorite ? "★ Удалить из избранного" : "☆ В избранное"}
