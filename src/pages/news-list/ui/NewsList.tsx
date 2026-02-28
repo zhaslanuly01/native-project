@@ -4,38 +4,184 @@ import {
   useNavigation,
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  ListRenderItem,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 
-import { Article } from "@/src/entities/article";
+import { Article, NewsCard } from "@/src/entities/article";
 import { useGetTopHeadlinesQuery } from "@/src/entities/article/api/articleApi";
+import { Category, DateFilter, NewsFilters } from "@/src/features/news-filters";
+import { useDebounce } from "@/src/shared/lib";
 import { RootStackParamList, RootTabParamList } from "@/src/shared/types";
 import { ErrorView, Loader, Page } from "@/src/shared/ui";
+import { styles } from "./NewsList.styles";
 
 type NewsListPageNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<RootTabParamList, "NewsList">,
   NativeStackNavigationProp<RootStackParamList>
 >;
 
+const PAGE_SIZE = 20;
+
 export default function NewsListPage() {
   const navigation = useNavigation<NewsListPageNavigationProp>();
 
-  const { data, isLoading, isError, error, refetch, isFetching } =
-    useGetTopHeadlinesQuery({
-      country: "us",
-      pageSize: 20,
-    });
+  const [page, setPage] = useState(1);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRefreshingLocal, setIsRefreshingLocal] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-  const onPressArticle = (article: Article) => {
-    navigation.navigate("NewsDetails", {
-      articleUrl: article.url,
-      title: article.title,
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery, 500);
+
+  const [category, setCategory] = useState<Category | undefined>(undefined);
+
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+
+  const onEndReachedCalledDuringMoment = useRef(false);
+
+  const queryArgs = useMemo(
+    () => ({
+      country: "us" as const,
+      pageSize: PAGE_SIZE,
+      page,
+      q: debouncedQuery || undefined,
+      category,
+    }),
+    [page, debouncedQuery, category]
+  );
+
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useGetTopHeadlinesQuery(queryArgs);
+
+  const filteredArticles = useMemo(() => {
+    if (dateFilter === "all") return articles;
+
+    const now = new Date();
+    const start = new Date();
+
+    if (dateFilter === "today") {
+      start.setHours(0, 0, 0, 0);
+    }
+
+    if (dateFilter === "7days") {
+      start.setDate(now.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+    }
+
+    return articles.filter((article) => {
+      const publishedAt = new Date(article.publishedAt);
+      return publishedAt >= start;
     });
+  }, [articles, dateFilter]);
+
+  const handleRefresh = async () => {
+    setIsRefreshingLocal(true);
+    setHasMore(true);
+    onEndReachedCalledDuringMoment.current = false;
+
+    try {
+      if (page === 1) {
+        await refetch();
+      } else {
+        setPage(1);
+      }
+    } finally {
+      if (page === 1) setIsRefreshingLocal(false);
+    }
   };
 
-  if (isLoading) return <Loader />;
+  const handleLoadMore = () => {
+    if (onEndReachedCalledDuringMoment.current) return;
 
-  if (isError) {
+    if (
+      isLoading ||
+      isFetching ||
+      isLoadingMore ||
+      isRefreshingLocal ||
+      !hasMore
+    ) {
+      return;
+    }
+
+    onEndReachedCalledDuringMoment.current = true;
+    setIsLoadingMore(true);
+    setPage((prev) => prev + 1);
+  };
+
+  const onPressArticle = useCallback(
+    (article: Article) => {
+      navigation.navigate("NewsDetails", {
+        article: {
+          url: article.url,
+          title: article.title,
+          description: article.description,
+          content: article.content,
+          author: article.author,
+          publishedAt: article.publishedAt,
+          urlToImage: article.urlToImage,
+          source: article.source,
+        },
+        from: "NewsList",
+      });
+    },
+    [navigation]
+  );
+
+  const keyExtractor = useCallback((item: Article) => item.url, []);
+
+  const renderItem = useCallback<ListRenderItem<Article>>(
+    ({ item }) => <NewsCard article={item} onPress={onPressArticle} />,
+    [onPressArticle]
+  );
+
+  useEffect(() => {
+    if (!data) return;
+
+    const incoming = data.articles ?? [];
+
+    setArticles((prev) => {
+      if (page === 1) return incoming;
+
+      const seen = new Set(prev.map((a) => a.url));
+      const uniqueIncoming = incoming.filter((a) => !seen.has(a.url));
+
+      return [...prev, ...uniqueIncoming];
+    });
+
+    const totalResults = data.totalResults ?? 0;
+
+    setHasMore(page * PAGE_SIZE < totalResults);
+    setIsLoadingMore(false);
+    setIsRefreshingLocal(false);
+
+    onEndReachedCalledDuringMoment.current = false;
+  }, [data, page]);
+
+  useEffect(() => {
+    setPage(1);
+    setArticles([]);
+    setHasMore(true);
+    setIsLoadingMore(false);
+    onEndReachedCalledDuringMoment.current = false;
+  }, [debouncedQuery, category]);
+
+  if (isLoading && page === 1) return <Loader />;
+
+  if (isError && articles.length === 0) {
     return (
       <Page>
         <ErrorView
@@ -50,96 +196,49 @@ export default function NewsListPage() {
 
   return (
     <Page>
+      <NewsFilters
+        searchQuery={searchQuery}
+        onChangeSearchQuery={setSearchQuery}
+        category={category}
+        onChangeCategory={setCategory}
+        dateFilter={dateFilter}
+        onChangeDateFilter={setDateFilter}
+      />
       <FlatList
-        data={data?.articles ?? []}
-        keyExtractor={(item) => item.url}
+        data={filteredArticles}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
         contentContainerStyle={styles.listContent}
-        onRefresh={refetch}
-        refreshing={isFetching && !isLoading}
-        renderItem={({ item }) => (
-          <Pressable style={styles.card} onPress={() => onPressArticle(item)}>
-            <Text style={styles.title}>{item.title}</Text>
-
-            {!!item.description && (
-              <Text style={styles.description} numberOfLines={2}>
-                {item.description}
-              </Text>
-            )}
-
-            <View style={styles.metaRow}>
-              <Text style={styles.source}>{item.source.name}</Text>
-              <Text style={styles.date}>
-                {new Date(item.publishedAt).toLocaleDateString()}
-              </Text>
-            </View>
-          </Pressable>
-        )}
+        onRefresh={handleRefresh}
+        refreshing={isRefreshingLocal || (isFetching && page === 1)}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.3}
+        onMomentumScrollBegin={() => {
+          onEndReachedCalledDuringMoment.current = false;
+        }}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
         ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <Text style={styles.emptyText}>Нет новостей</Text>
-          </View>
+          !isLoading && !isFetching ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyText}>Нет новостей</Text>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={
+          isLoadingMore ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator />
+            </View>
+          ) : !hasMore && filteredArticles.length > 0 ? (
+            <View style={styles.footerEnd}>
+              <Text style={styles.footerEndText}>Больше новостей нет</Text>
+            </View>
+          ) : null
         }
       />
     </Page>
   );
 }
-
-const styles = StyleSheet.create({
-  listContent: {
-    padding: 12,
-    gap: 10,
-  },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ececec",
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 6,
-    color: "#111",
-  },
-  description: {
-    fontSize: 13,
-    color: "#555",
-    marginBottom: 10,
-    lineHeight: 18,
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  source: {
-    flex: 1,
-    fontSize: 12,
-    color: "#333",
-    fontWeight: "600",
-  },
-  date: {
-    fontSize: 12,
-    color: "#777",
-  },
-  emptyWrap: {
-    paddingTop: 40,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: "#666",
-  },
-  retryButton: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    backgroundColor: "#111",
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  retryText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-});

@@ -4,9 +4,11 @@ export type {
   NewsApiResponse,
   NewsSource,
   SearchEverythingParams,
-} from "./models/article.types";
+} from "./model/article.types";
 
 export {
   useGetTopHeadlinesQuery,
   useSearchEverythingQuery,
 } from "./api/articleApi";
+
+export { NewsCard } from "./ui/news-card/NewsCard";

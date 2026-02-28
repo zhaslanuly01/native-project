@@ -9,14 +9,9 @@ import {
 } from "@/src/entities/session";
 import { AuthPage } from "@/src/pages/auth";
 import { NewsDetailsPage } from "@/src/pages/news-details";
+import { RootStackParamList } from "@/src/shared/types";
 import { Loader } from "@/src/shared/ui/Loader";
 import { RootTabs } from "./RootTabs";
-
-type RootStackParamList = {
-  Auth: undefined;
-  MainTabs: undefined;
-  NewsDetails: { articleUrl: string; title?: string };
-};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -45,7 +40,16 @@ export default function RootNavigator() {
             <Stack.Screen
               name="NewsDetails"
               component={NewsDetailsPage}
-              options={{ title: "Детали" }}
+              options={({ route }) => {
+                const from = route.params?.from;
+                const backTitle =
+                  from === "Favorites" ? "Избранные" : "Новости";
+
+                return {
+                  title: "Детали",
+                  headerBackTitle: backTitle,
+                };
+              }}
             />
           </>
         )}

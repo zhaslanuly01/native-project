@@ -4,7 +4,7 @@ import {
   GetTopHeadlinesParams,
   NewsApiResponse,
   SearchEverythingParams,
-} from "../models/article.types";
+} from "../model/article.types";
 
 export const articleApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

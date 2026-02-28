@@ -1,3 +1,3 @@
 export { SessionBootstrap } from "./bootstrap/SessionBootstrap";
 export { StoreProvider } from "./providers/StoreProvider";
-export { RootNavigator } from "./router/RootNavigator";
+export { default as RootNavigator } from "./router/RootNavigator";
