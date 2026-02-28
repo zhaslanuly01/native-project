@@ -1,4 +1,3 @@
-import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
@@ -12,10 +11,6 @@ Notifications.setNotificationHandler({
 });
 
 export async function requestNotificationsPermission() {
-  if (!Device.isDevice) {
-    console.log("Running on simulator/emulator. Notifications may be limited.");
-  }
-
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 

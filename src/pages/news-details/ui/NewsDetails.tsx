@@ -1,4 +1,7 @@
+import { Article } from "@/src/entities/article";
 import { selectIsFavoriteByUrl, toggleFavorite } from "@/src/entities/favorite";
+import { useDownloadArticleImage } from "@/src/features/article-download-image";
+import { useExportArticleJson } from "@/src/features/article-export-json";
 import { sendFavoriteAddedNotification } from "@/src/shared/lib/notifications";
 import { RootStackParamList } from "@/src/shared/types/router.types";
 import { Page } from "@/src/shared/ui/Page";
@@ -6,6 +9,7 @@ import { RouteProp, useRoute } from "@react-navigation/native";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -43,6 +47,47 @@ export default function NewsDetailsPage() {
     publishedAt: article.publishedAt ?? "",
     urlToImage: article.urlToImage ?? null,
     sourceName: article.source?.name ?? "Не указан",
+  };
+
+  const {
+    downloadImage,
+    isLoading: isDownloadingImage,
+    progress: imageDownloadProgress,
+    error: imageDownloadError,
+  } = useDownloadArticleImage();
+
+  const {
+    exportJson,
+    isLoading: isExportingJson,
+    error: exportJsonError,
+  } = useExportArticleJson();
+
+  const handleDownloadImage = async () => {
+    if (!article.urlToImage) {
+      Alert.alert("Ошибка", "У статьи нет изображения");
+      return;
+    }
+
+    const uri = await downloadImage(article.urlToImage, article.title);
+
+    if (uri) {
+      Alert.alert("Успешно", "Изображение скачано и сохранено в галерею");
+    } else {
+      Alert.alert(
+        "Ошибка",
+        imageDownloadError || "Не удалось скачать/сохранить изображение"
+      );
+    }
+  };
+
+  const handleExportJson = async () => {
+    const uri = await exportJson(article as Article);
+
+    if (uri) {
+      Alert.alert("Успешно", `JSON сохранён:\n${uri}`);
+    } else {
+      Alert.alert("Ошибка", exportJsonError || "Не удалось сохранить JSON");
+    }
   };
 
   const handleToggleFavorite = async () => {
@@ -157,6 +202,32 @@ export default function NewsDetailsPage() {
               {isFavorite ? "★ Удалить из избранного" : "☆ В избранное"}
             </Text>
           </Pressable>
+          {!!article.urlToImage && (
+            <Pressable
+              style={styles.openWebButton}
+              onPress={handleDownloadImage}
+            >
+              <Text style={styles.openWebButtonText}>
+                {isDownloadingImage
+                  ? `Скачивание изображения... ${imageDownloadProgress}%`
+                  : "Скачать изображение"}
+              </Text>
+            </Pressable>
+          )}
+
+          <Pressable style={styles.openWebButton} onPress={handleExportJson}>
+            <Text style={styles.openWebButtonText}>
+              {isExportingJson ? "Сохранение JSON..." : "Скачать JSON статьи"}
+            </Text>
+          </Pressable>
+
+          {!!imageDownloadError && (
+            <Text style={styles.errorText}>{imageDownloadError}</Text>
+          )}
+
+          {!!exportJsonError && (
+            <Text style={styles.errorText}>{exportJsonError}</Text>
+          )}
         </View>
 
         {!!article.urlToImage && (

@@ -30,10 +30,11 @@ export function useBiometricLogin() {
       const capability = await canUseBiometrics();
 
       if (!capability.available) {
-        setError("Biometrics unavailable on this device");
+        setError(
+          `Biometrics unavailable (hardware: ${capability.hasHardware}, enrolled: ${capability.isEnrolled})`
+        );
         return false;
       }
-
       const result = await authenticateWithBiometrics();
 
       if (result.success) {

@@ -10,7 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.islam.newsapp"
+      "bundleIdentifier": "com.islam.newsapp",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Разрешите доступ к фото для сохранения изображений из новостей.",
+        "NSPhotoLibraryAddUsageDescription": "Разрешите сохранять изображения в галерею."
+      }
     },
     "android": {
       "bundleIdentifier": "com.islam.newsapp",
@@ -41,7 +45,14 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Разрешите доступ к фото для чтения медиа.",
+          "savePhotosPermission": "Разрешите сохранять изображения в галерею."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -6,14 +6,7 @@ export function NotificationsBootstrap({ children }: PropsWithChildren) {
     let isMounted = true;
 
     const initNotifications = async () => {
-      try {
-        const ok = await requestNotificationsPermission();
-        if (isMounted) {
-          console.log("notifications permission granted:", ok);
-        }
-      } catch (e) {
-        console.log("notifications permission error:", e);
-      }
+      await requestNotificationsPermission();
     };
 
     initNotifications();

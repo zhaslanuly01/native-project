@@ -7,11 +7,8 @@ export function useLogout() {
 
   const logout = async () => {
     try {
-      console.log("logout start");
       await sessionStorage.clearSession();
-      console.log("storage cleared");
       dispatch(logoutSession());
-      console.log("dispatched logoutSession");
     } catch (e) {
       console.log("logout error", e);
     }
