@@ -22,11 +22,12 @@ import {
 
 import { Article, NewsCard } from "@/src/entities/article";
 import { useGetTopHeadlinesQuery } from "@/src/entities/article/api/articleApi";
-import { Category, DateFilter, NewsFilters } from "@/src/features/news-filters";
+import { Category, DateFilter } from "@/src/features/news-filters";
 import { useDebounce } from "@/src/shared/lib/hooks";
 import { sendLocalNewsNotification } from "@/src/shared/lib/notifications";
 import { RootStackParamList, RootTabParamList } from "@/src/shared/types";
 import { ErrorView, Loader, Page } from "@/src/shared/ui";
+import { NewsFiltersPanel } from "@/src/widgets/news-filter-panel";
 import { styles } from "./NewsList.styles";
 
 type NewsListPageNavigationProp = CompositeNavigationProp<
@@ -223,7 +224,7 @@ export default function NewsListPage() {
 
   return (
     <Page>
-      <NewsFilters
+      <NewsFiltersPanel
         searchQuery={searchQuery}
         onChangeSearchQuery={setSearchQuery}
         category={category}

@@ -15,3 +15,4 @@ export {
   saveFavoritesToStorage,
 } from "./model/favorite.storage";
 export type { FavoriteArticle } from "./model/favorite.types";
+export { FavoriteCard } from "./ui/favorite-card/FavoriteCard";
