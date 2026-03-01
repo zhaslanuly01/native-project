@@ -401,7 +401,7 @@ npx expo run:ios
 npx expo run:android
 ```
 
-### Production / Preview сборка (через EAS, если настроено)
+### Production / Preview сборка
 
 Если в проекте подключён EAS:
 
