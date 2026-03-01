@@ -85,7 +85,6 @@ export function useFileUpload() {
     abortRef.current = controller;
 
     try {
-      // size limit (same as before)
       const maxSize = 10 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
         const err = new Error("Размер файла превышает 10MB");
@@ -93,7 +92,6 @@ export function useFileUpload() {
         throw err;
       }
 
-      // type check: mime OR extension
       const isJsonMime = selectedFile.mimeType?.includes("json");
       const isJsonExt = selectedFile.name.toLowerCase().endsWith(".json");
       if (!isJsonMime && !isJsonExt) {
@@ -102,7 +100,6 @@ export function useFileUpload() {
         throw err;
       }
 
-      // fake progress (optional UX)
       setProgress(10);
 
       if (controller.signal.aborted) {
