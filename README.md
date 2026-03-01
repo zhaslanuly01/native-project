@@ -414,6 +414,89 @@ eas build --platform android
 
 ---
 
+## Структура проекта
+
+Примерно (укрупнённо):
+
+```txt
+src/
+├─ app/
+│  ├─ bootstrap/        # стартовая инициализация (session, notifications)
+│  ├─ providers/        # StoreProvider / store
+│  └─ router/           # RootNavigator / RootTabs
+│
+├─ pages/
+│  ├─ auth/
+│  ├─ favorites/
+│  ├─ news-details/
+│  └─ news-list/
+│
+├─ widgets/
+│  ├─ article-webview-viewer/
+│  ├─ news-details-actions/
+│  ├─ news-details-content/
+│  └─ news-filter-panel/
+│
+├─ features/
+│  ├─ biometric-login/
+│  ├─ logout/
+│  ├─ toggle-favorite-article/
+│  ├─ article-download-image/
+│  ├─ article-export-json/
+│  ├─ upload-file/
+│  └─ news-filters/
+│
+├─ entities/
+│  ├─ article/
+│  ├─ favorite/
+│  ├─ session/
+│  └─ file/
+│
+└─ shared/
+   ├─ api/
+   ├─ config/
+   ├─ lib/
+   ├─ types/
+   └─ ui/
+```
+
+---
+
+## Особенности реализации (пояснения по решениям)
+
+### 1. Разделение на `entities / features / widgets / pages`
+
+Это упрощает поддержку:
+
+- бизнес-модели не смешиваются с UI-экраном
+- пользовательские сценарии инкапсулированы в `features`
+- страницы собирают готовые блоки
+
+### 2. Redux Toolkit + RTK Query
+
+Использован единый подход для:
+
+- локального состояния (`session`, `favorites`)
+- серверного состояния (`articleApi`)
+
+Это снижает сложность и делает код более единообразным.
+
+### 3. Безопасное хранение сессии
+
+Данные сессии сохраняются в `SecureStore`, а не в обычном `AsyncStorage`, что лучше подходит для auth-related данных.
+
+### 4. Явная обработка ошибок файлового импорта
+
+В `upload-file` сделан отдельный формат ошибок (`FileTransferError`) и маппинг кодов в понятные сообщения для пользователя.
+
+### 5. Bootstrap-инициализация
+
+Отдельные `SessionBootstrap` и `NotificationsBootstrap` позволяют:
+
+- не перегружать `App.tsx`
+- централизованно запускать init-логику
+- легко добавлять новые bootstrap-модули
+
 ## Тестирование
 
 ### Текущее состояние
@@ -499,86 +582,3 @@ eas build --platform android
   - открытие статьи и WebView
 
 ---
-
-## Структура проекта
-
-Примерно (укрупнённо):
-
-```txt
-src/
-├─ app/
-│  ├─ bootstrap/        # стартовая инициализация (session, notifications)
-│  ├─ providers/        # StoreProvider / store
-│  └─ router/           # RootNavigator / RootTabs
-│
-├─ pages/
-│  ├─ auth/
-│  ├─ favorites/
-│  ├─ news-details/
-│  └─ news-list/
-│
-├─ widgets/
-│  ├─ article-webview-viewer/
-│  ├─ news-details-actions/
-│  ├─ news-details-content/
-│  └─ news-filter-panel/
-│
-├─ features/
-│  ├─ biometric-login/
-│  ├─ logout/
-│  ├─ toggle-favorite-article/
-│  ├─ article-download-image/
-│  ├─ article-export-json/
-│  ├─ upload-file/
-│  └─ news-filters/
-│
-├─ entities/
-│  ├─ article/
-│  ├─ favorite/
-│  ├─ session/
-│  └─ file/
-│
-└─ shared/
-   ├─ api/
-   ├─ config/
-   ├─ lib/
-   ├─ types/
-   └─ ui/
-```
-
----
-
-## Особенности реализации (пояснения по решениям)
-
-### 1. Разделение на `entities / features / widgets / pages`
-
-Это упрощает поддержку:
-
-- бизнес-модели не смешиваются с UI-экраном
-- пользовательские сценарии инкапсулированы в `features`
-- страницы собирают готовые блоки
-
-### 2. Redux Toolkit + RTK Query
-
-Использован единый подход для:
-
-- локального состояния (`session`, `favorites`)
-- серверного состояния (`articleApi`)
-
-Это снижает сложность и делает код более единообразным.
-
-### 3. Безопасное хранение сессии
-
-Данные сессии сохраняются в `SecureStore`, а не в обычном `AsyncStorage`, что лучше подходит для auth-related данных.
-
-### 4. Явная обработка ошибок файлового импорта
-
-В `upload-file` сделан отдельный формат ошибок (`FileTransferError`) и маппинг кодов в понятные сообщения для пользователя.
-
-### 5. Bootstrap-инициализация
-
-Отдельные `SessionBootstrap` и `NotificationsBootstrap` позволяют:
-
-- не перегружать `App.tsx`
-- централизованно запускать init-логику
-- легко добавлять новые bootstrap-модули
